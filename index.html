@@ -122,39 +122,50 @@
                                 <i class="bi bi-plus-circle-fill me-2"></i> Registrar Nuevo Activo
                             </div>
                             <div class="card-body">
-                                <form id="form-activo">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label text-muted small fw-bold">No. Inventario</label>
-                                            <input type="text" class="form-control" id="no_inventario" placeholder="Ej. GT-001" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-muted small fw-bold">No. Serie</label>
-                                            <input type="text" class="form-control" id="no_serie" placeholder="Serie" required>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label text-muted small fw-bold">Tipo y Modelo</label>
-                                            <div class="input-group">
-                                                <select class="form-select" id="tipo_equipo" style="max-width: 130px;" required>
-                                                    <option value="Laptop">Laptop</option>
-                                                    <option value="Desktop">Desktop</option>
-                                                    <option value="Monitor">Monitor</option>
-                                                    <option value="Smartphone">Smartphone</option>
-                                                </select>
-                                                <input type="text" class="form-control" id="marca_modelo" placeholder="Marca y Modelo" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label text-muted small fw-bold">Asignado a</label>
-                                            <input type="text" class="form-control" id="asignado_a" placeholder="Nombre del colaborador" required>
-                                        </div>
-                                        <div class="col-12 mt-4">
-                                            <button type="submit" class="btn w-100" style="background-color: var(--guatel-blue); color: white;">
-                                                Guardar Registro
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
+<form id="form-activo">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">No. Inventario</label>
+            <input type="text" class="form-control" id="no_inventario" placeholder="Ej. GT-001" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">No. Serie</label>
+            <input type="text" class="form-control" id="no_serie" placeholder="Serie" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Tipo y Modelo</label>
+            <div class="input-group">
+                <select class="form-select" id="tipo_equipo" style="max-width: 150px;" required>
+                    <option value="Escritorio">Escritorio</option>
+                    <option value="Disco Duro">Disco Duro</option>
+                    <option value="Servidor">Servidor</option>
+                    <option value="Accesorio">Accesorio</option>
+                    <option value="Teléfono">Teléfono</option>
+                    <option value="Smartphone">Smartphone</option>
+                    <option value="Silla">Silla</option>
+                    <option value="Switch">Switch</option>
+                    <option value="Router">Router</option>
+                    <option value="Access Point">Access Point</option>
+                    <option value="Firewall">Firewall</option>
+                </select>
+                <input type="text" class="form-control" id="marca_modelo" placeholder="Marca y Modelo" required>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Asignado a</label>
+            <input type="text" class="form-control" id="asignado_a" placeholder="Nombre del colaborador" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Descripción / Detalles</label>
+            <textarea class="form-control" id="descripcion" rows="2" placeholder="Ej. Color, estado físico, ubicación exacta..."></textarea>
+        </div>
+        <div class="col-12 mt-2">
+            <button type="submit" class="btn w-100" style="background-color: var(--guatel-blue); color: white;">
+                Guardar Registro
+            </button>
+        </div>
+    </div>
+</form>
                             </div>
                         </div>
                     </div>
