@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - GUATEL IT</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --guatel-blue: #003366;
+            --guatel-light: #e6ecf2;
+            --guatel-accent: #00509e;
+            --bg-color: #f4f7fa;
+            --text-dark: #2b3445;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-dark); overflow-x: hidden; }
+
+        /* Layout del Dashboard */
+        .wrapper { display: flex; width: 100%; align-items: stretch; }
+        
+        /* Sidebar */
+        #sidebar { min-width: 260px; max-width: 260px; background: var(--guatel-blue); color: #fff; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        #sidebar .sidebar-header { padding: 20px; background: var(--guatel-accent); text-align: center; }
+        #sidebar ul.components { padding: 20px 0; }
+        #sidebar ul li a { padding: 12px 20px; font-size: 0.95rem; display: block; color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.2s; }
+        #sidebar ul li a:hover, #sidebar ul li.active > a { color: #fff; background: rgba(255,255,255,0.1); border-left: 4px solid #fff; }
+        #sidebar ul li a i { margin-right: 10px; font-size: 1.1rem; }
+
+        /* Contenido y Topbar */
+        #content { width: 100%; padding: 0; min-height: 100vh; }
+        .topbar { background: #fff; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+
+        /* Tarjetas */
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 24px; }
+        .card-header { background-color: #fff; border-bottom: 1px solid #edf2f9; padding: 1rem 1.25rem; border-radius: 10px 10px 0 0 !important; font-weight: 600; color: var(--guatel-blue); }
+        
+        /* KPIs */
+        .stat-card { padding: 20px; border-radius: 10px; background: #fff; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 15px; }
+        .icon-blue { background: var(--guatel-light); color: var(--guatel-blue); }
+        .icon-green { background: #d1f2eb; color: #117a65; }
+        .icon-red { background: #fadbd8; color: #c0392b; }
+
+        /* Tablas */
+        .table > :not(caption) > * > * { padding: 1rem 0.75rem; }
+        .table thead th { font-weight: 600; color: #6e84a3; font-size: 0.85rem; text-transform: uppercase; border-bottom-width: 1px; }
+
+        /* Ocultar plantilla PDF */
+        #reporte-pdf-template { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h4 class="mb-0 fw-bold">GUATEL</h4>
+                <small>Gestión de Activos IT</small>
+            </div>
+            <ul class="list-unstyled components">
+                <li class="active"><a href="#"><i class="bi bi-grid-1x2-fill"></i> Panel Principal</a></li>
+                <li><a href="#"><i class="bi bi-pc-display"></i> Inventario</a></li>
+                <li><a href="#"><i class="bi bi-file-earmark-pdf-fill"></i> Reportes</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="topbar">
+                <h5 class="mb-0 text-secondary">Coordinación de Soporte IT</h5>
+                <div class="d-flex align-items-center">
+                    <span class="me-3 fw-medium">Marvin Leonel Luna Garcia</span>
+                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">ML</div>
+                </div>
+            </div>
+
+            <div class="container-fluid p-4">
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue"><i class="bi bi-laptop"></i></div>
+                            <div>
+                                <h6 class="text-muted mb-1">Total Equipos</h6>
+                                <h3 class="mb-0 fw-bold" id="kpi-total">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green"><i class="bi bi-check-circle"></i></div>
+                            <div>
+                                <h6 class="text-muted mb-1">Asignados / Activos</h6>
+                                <h3 class="mb-0 fw-bold" id="kpi-activos">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-red"><i class="bi bi-tools"></i></div>
+                            <div>
+                                <h6 class="text-muted mb-1">En Reparación</h6>
+                                <h3 class="mb-0 fw-bold" id="kpi-reparacion">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card h-100">
+                            <div class="card-header d-flex align-items-center">
+                                <i class="bi bi-plus-circle-fill me-2"></i> Registrar Nuevo Activo
+                            </div>
+                            <div class="card-body">
+                                <form id="form-activo">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small fw-bold">No. Inventario</label>
+                                            <input type="text" class="form-control" id="no_inventario" placeholder="Ej. GT-001" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small fw-bold">No. Serie</label>
+                                            <input type="text" class="form-control" id="no_serie" placeholder="Serie" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted small fw-bold">Tipo y Modelo</label>
+                                            <div class="input-group">
+                                                <select class="form-select" id="tipo_equipo" style="max-width: 130px;" required>
+                                                    <option value="Laptop">Laptop</option>
+                                                    <option value="Desktop">Desktop</option>
+                                                    <option value="Monitor">Monitor</option>
+                                                    <option value="Smartphone">Smartphone</option>
+                                                </select>
+                                                <input type="text" class="form-control" id="marca_modelo" placeholder="Marca y Modelo" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted small fw-bold">Asignado a</label>
+                                            <input type="text" class="form-control" id="asignado_a" placeholder="Nombre del colaborador" required>
+                                        </div>
+                                        <div class="col-12 mt-4">
+                                            <button type="submit" class="btn w-100" style="background-color: var(--guatel-blue); color: white;">
+                                                Guardar Registro
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-table me-2"></i> Inventario General</span>
+                                <div class="d-flex gap-2">
+                                    <input type="text" id="buscar_empleado" class="form-control form-control-sm" placeholder="Buscar empleado...">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="generarReportePDF()">
+                                        <i class="bi bi-file-pdf"></i> Generar PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Inventario / Serie</th>
+                                                <th>Equipo / Tipo</th>
+                                                <th>Asignado A</th>
+                                                <th>Estado</th>
+                                                <th class="text-end">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabla-activos">
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: var(--guatel-blue); color: white;">
+                    <h5 class="modal-title">Editar Activo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar">
+                        <input type="hidden" id="edit_id">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">No. Inventario</label>
+                            <input type="text" class="form-control" id="edit_inventario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">No. Serie</label>
+                            <input type="text" class="form-control" id="edit_serie" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Marca y Modelo</label>
+                            <input type="text" class="form-control" id="edit_modelo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Estado</label>
+                            <select class="form-select" id="edit_estado">
+                                <option value="Activo">Activo</option>
+                                <option value="En Reparación">En Reparación</option>
+                                <option value="De Baja">De Baja</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn w-100 text-white" style="background-color: var(--guatel-blue);">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTransferir" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title">Transferir Equipo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="transfer_id">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Nuevo Responsable</label>
+                        <input type="text" class="form-control" id="nuevo_responsable" placeholder="Nombre completo" required>
+                    </div>
+                    <button type="button" class="btn btn-success w-100" onclick="ejecutarTransferencia()">Confirmar Cambio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reporte-pdf-template">
+        <div style="padding: 40px; font-family: Arial, sans-serif;">
+            <div style="border-bottom: 3px solid #003366; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="color: #003366; margin: 0;">GUATEL</h2>
+                <p style="color: #555; margin: 0; font-size: 14px;">Coordinación de Soporte IT - Reporte de Asignación</p>
+            </div>
+            <h4 style="color: #333;">Responsable: <span id="pdf-nombre-empleado"></span></h4>
+            <p style="font-size: 12px; color: #666;">Fecha de emisión: <span id="pdf-fecha"></span></p>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #003366; color: white;">
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Inventario</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Tipo</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Marca/Modelo</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-tabla-body"></tbody>
+            </table>
+
+            <div style="margin-top: 60px; text-align: center;">
+                <hr style="width: 250px; border-top: 1px solid #000;">
+                <p style="font-size: 12px;">Firma de Conformidad</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------------------
+        // 1. CONFIGURACIÓN FIREBASE (REEMPLAZA ESTO CON LO QUE COPIASTE DE FIREBASE)
+        // -------------------------------------------------------------------------
+        const firebaseConfig = {
+  apiKey: "AIzaSyCT64Da_nrZiiVsrsMkCp7iYZH7wAi3ySQ",
+  authDomain: "control-de-activos-guatel.firebaseapp.com",
+  projectId: "control-de-activos-guatel",
+  storageBucket: "control-de-activos-guatel.firebasestorage.app",
+  messagingSenderId: "752994867623",
+  appId: "1:752994867623:web:c9fb5bb3a043f8d5e93e82"
+};
+        
+        // Inicializar la base de datos
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // -------------------------------------------------------------------------
+        // 2. VARIABLES GLOBALES Y REFERENCIAS AL DISEÑO
+        // -------------------------------------------------------------------------
+        let listaActivos = [];
+        const tablaActivos = document.getElementById('tabla-activos');
+        const modalEdit = new bootstrap.Modal(document.getElementById('modalEditar'));
+        const modalTrans = new bootstrap.Modal(document.getElementById('modalTransferir'));
+
+        // -------------------------------------------------------------------------
+        // 3. LECTURA EN TIEMPO REAL DESDE LA NUBE
+        // -------------------------------------------------------------------------
+        db.collection('activos').onSnapshot((snapshot) => {
+            listaActivos = [];
+            snapshot.forEach((doc) => {
+                listaActivos.push({ id: doc.id, ...doc.data() });
+            });
+            renderizarTabla(listaActivos);
+            actualizarKPIs();
+        });
+
+        // -------------------------------------------------------------------------
+        // 4. DIBUJAR LA TABLA EN PANTALLA
+        // -------------------------------------------------------------------------
+        function renderizarTabla(datos) {
+            tablaActivos.innerHTML = '';
+            datos.forEach(activo => {
+                let badgeColor = activo.estado === 'Activo' ? 'success' : (activo.estado === 'En Reparación' ? 'warning' : 'danger');
+                tablaActivos.innerHTML += `
+                    <tr>
+                        <td><span class="fw-bold">${activo.inventario}</span><br><small class="text-muted">SN: ${activo.serie}</small></td>
+                        <td>${activo.modelo}<br><small class="text-muted">${activo.tipo}</small></td>
+                        <td><i class="bi bi-person-fill text-primary"></i> ${activo.asignado}</td>
+                        <td><span class="badge bg-${badgeColor} bg-opacity-10 text-${badgeColor} border border-${badgeColor}">${activo.estado}</span></td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-light text-primary" onclick="abrirModalTransferir('${activo.id}')" title="Transferir"><i class="bi bi-arrow-left-right"></i></button>
+                                <button class="btn btn-sm btn-light text-success" onclick="abrirModalEditar('${activo.id}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm btn-light text-danger" onclick="eliminarActivo('${activo.id}')" title="Eliminar"><i class="bi bi-trash3-fill"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 5. BUSCADOR RÁPIDO
+        // -------------------------------------------------------------------------
+        document.getElementById('buscar_empleado').addEventListener('keyup', (e) => {
+            const texto = e.target.value.toLowerCase();
+            const filtrados = listaActivos.filter(a => a.asignado.toLowerCase().includes(texto) || a.inventario.toLowerCase().includes(texto));
+            renderizarTabla(filtrados);
+        });
+
+        // -------------------------------------------------------------------------
+        // 6. GUARDAR UN NUEVO REGISTRO
+        // -------------------------------------------------------------------------
+        document.getElementById('form-activo').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await db.collection('activos').add({
+                    inventario: document.getElementById('no_inventario').value,
+                    serie: document.getElementById('no_serie').value,
+                    tipo: document.getElementById('tipo_equipo').value,
+                    modelo: document.getElementById('marca_modelo').value,
+                    asignado: document.getElementById('asignado_a').value,
+                    estado: 'Activo'
+                });
+                document.getElementById('form-activo').reset(); // Limpiar formulario al guardar
+            } catch (error) { console.error("Error al guardar:", error); }
+        });
+
+        // -------------------------------------------------------------------------
+        // 7. ELIMINAR REGISTRO
+        // -------------------------------------------------------------------------
+        async function eliminarActivo(id) {
+            if(confirm("¿Seguro que deseas eliminar este equipo del inventario?")) {
+                await db.collection('activos').doc(id).delete();
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 8. EDITAR REGISTRO
+        // -------------------------------------------------------------------------
+        function abrirModalEditar(id) {
+            const activo = listaActivos.find(a => a.id === id);
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_inventario').value = activo.inventario;
+            document.getElementById('edit_serie').value = activo.serie;
+            document.getElementById('edit_modelo').value = activo.modelo;
+            document.getElementById('edit_estado').value = activo.estado;
+            modalEdit.show();
+        }
+
+        document.getElementById('form-editar').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            await db.collection('activos').doc(id).update({
+                inventario: document.getElementById('edit_inventario').value,
+                serie: document.getElementById('edit_serie').value,
+                modelo: document.getElementById('edit_modelo').value,
+                estado: document.getElementById('edit_estado').value
+            });
+            modalEdit.hide();
+        });
+
+        // -------------------------------------------------------------------------
+        // 9. TRANSFERIR EQUIPO A OTRA PERSONA
+        // -------------------------------------------------------------------------
+        function abrirModalTransferir(id) {
+            document.getElementById('transfer_id').value = id;
+            document.getElementById('nuevo_responsable').value = '';
+            modalTrans.show();
+        }
+
+        async function ejecutarTransferencia() {
+            const id = document.getElementById('transfer_id').value;
+            const nuevo = document.getElementById('nuevo_responsable').value;
+            if(nuevo.trim() !== "") {
+                await db.collection('activos').doc(id).update({ asignado: nuevo });
+                modalTrans.hide();
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 10. ACTUALIZAR TARJETAS (KPIs)
+        // -------------------------------------------------------------------------
+        function actualizarKPIs() {
+            document.getElementById('kpi-total').innerText = listaActivos.length;
+            document.getElementById('kpi-activos').innerText = listaActivos.filter(a => a.estado === 'Activo').length;
+            document.getElementById('kpi-reparacion').innerText = listaActivos.filter(a => a.estado === 'En Reparación').length;
+        }
+
+        // -------------------------------------------------------------------------
+        // 11. GENERAR DOCUMENTO PDF PARA IMPRIMIR
+        // -------------------------------------------------------------------------
+        function generarReportePDF() {
+            const empleado = document.getElementById('buscar_empleado').value.trim();
+            if (empleado === "") return alert("Ingresa el nombre del colaborador en el buscador primero.");
+            
+            const equipos = listaActivos.filter(a => a.asignado.toLowerCase().includes(empleado.toLowerCase()));
+            if (equipos.length === 0) return alert("No hay equipos asignados a esta persona.");
+
+            document.getElementById('pdf-nombre-empleado').textContent = empleado.toUpperCase();
+            document.getElementById('pdf-fecha').textContent = new Date().toLocaleDateString('es-ES');
+            
+            const tbody = document.getElementById('pdf-tabla-body');
+            tbody.innerHTML = "";
+            equipos.forEach(eq => {
+                tbody.innerHTML += `<tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${eq.inventario}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${eq.tipo}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${eq.modelo}</td>
+                </tr>`;
+            });
+
+            const elemento = document.getElementById('reporte-pdf-template');
+            elemento.style.display = 'block';
+
+            html2pdf().set({
+                margin: 0.5,
+                filename: `Reporte_Activos_${empleado.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            }).from(elemento).save().then(() => { elemento.style.display = 'none'; });
+        }
+    </script>
+</body>
+</html>
